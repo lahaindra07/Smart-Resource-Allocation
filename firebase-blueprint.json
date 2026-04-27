@@ -1,0 +1,142 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "System user with role-based access",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["ADMIN", "NGO_MANAGER", "VOLUNTEER", "PUBLIC"] },
+        "emailVerified": { "type": "boolean" },
+        "image": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "role", "createdAt"]
+    },
+    "Organization": {
+      "title": "Organization",
+      "description": "NGO or community group",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "location": { "type": "string" },
+        "contactEmail": { "type": "string" },
+        "verified": { "type": "boolean" },
+        "ownerId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "ownerId", "createdAt"]
+    },
+    "CommunityNeed": {
+      "title": "CommunityNeed",
+      "description": "A specific need reported by an organization or user",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "urgencyLevel": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"] },
+        "category": { "type": "string", "enum": ["HEALTH", "EDUCATION", "FOOD", "SHELTER", "ENVIRONMENT", "OTHER"] },
+        "location": { "type": "string" },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" },
+        "status": { "type": "string", "enum": ["OPEN", "IN_PROGRESS", "RESOLVED"] },
+        "reportedBy": { "type": "string" },
+        "organizationId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "urgencyLevel", "category", "status", "reportedBy", "createdAt"]
+    },
+    "SurveyReport": {
+      "title": "SurveyReport",
+      "description": "Uploaded survey documents",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "fileUrl": { "type": "string" },
+        "fileType": { "type": "string" },
+        "dataPoints": { "type": "object" },
+        "organizationId": { "type": "string" },
+        "uploadedBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "fileUrl", "organizationId", "uploadedBy", "createdAt"]
+    },
+    "VolunteerProfile": {
+      "title": "VolunteerProfile",
+      "description": "Skills and availability of a volunteer",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "skills": { "type": "array", "items": { "type": "string" } },
+        "availability": { "type": "string" },
+        "hoursPerWeek": { "type": "number" },
+        "location": { "type": "string" },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" },
+        "bio": { "type": "string" },
+        "verified": { "type": "boolean" },
+        "impactScore": { "type": "number" }
+      },
+      "required": ["userId", "skills"]
+    },
+    "VolunteerMatch": {
+      "title": "VolunteerMatch",
+      "description": "A match between a volunteer and a need",
+      "type": "object",
+      "properties": {
+        "volunteerId": { "type": "string" },
+        "needId": { "type": "string" },
+        "status": { "type": "string", "enum": ["PENDING", "ACCEPTED", "REJECTED", "COMPLETED"] },
+        "matchScore": { "type": "number" },
+        "assignedAt": { "type": "string", "format": "date-time" },
+        "completedAt": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" }
+      },
+      "required": ["volunteerId", "needId", "status", "matchScore", "assignedAt"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "Specific tasks within a community need",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "needId": { "type": "string" },
+        "assignedTo": { "type": "string" },
+        "deadline": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["TODO", "IN_PROGRESS", "DONE"] },
+        "priority": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "needId", "status", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "User notifications",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string" },
+        "read": { "type": "boolean" },
+        "link": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "message", "read", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": { "schema": "User", "description": "Global user profiles" },
+    "organizations/{orgId}": { "schema": "Organization", "description": "NGO profiles" },
+    "needs/{needId}": { "schema": "CommunityNeed", "description": "Reported community needs" },
+    "reports/{reportId}": { "schema": "SurveyReport", "description": "Survey reports and extracted data" },
+    "volunteer_profiles/{profileId}": { "schema": "VolunteerProfile", "description": "Volunteer skill profiles" },
+    "matches/{matchId}": { "schema": "VolunteerMatch", "description": "Volunteer-to-need assignments" },
+    "tasks/{taskId}": { "schema": "Task", "description": "Specific action items" },
+    "notifications/{notifId}": { "schema": "Notification", "description": "User notification stream" }
+  }
+}

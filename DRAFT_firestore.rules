@@ -1,0 +1,133 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- GLOBAL HELPERS ---
+    function isSignedIn() { return request.auth != null; }
+    function isVerified() { return isSignedIn() && request.auth.token.email_verified == true; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    
+    // Auth tokens do not contain roles. We must look them up.
+    function getUserData(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && getUserData(request.auth.uid).role == 'ADMIN';
+    }
+    
+    function isNgoManager() {
+      return isSignedIn() && getUserData(request.auth.uid).role == 'NGO_MANAGER';
+    }
+
+    // --- ENTITY VALIDATORS ---
+    
+    function isValidUser(data) {
+      return data.keys().hasAll(['email', 'role', 'createdAt']) &&
+             data.keys().size() <= 8 &&
+             data.email is string && data.email.size() <= 256 &&
+             data.role in ['ADMIN', 'NGO_MANAGER', 'VOLUNTEER', 'PUBLIC'] &&
+             data.createdAt == request.time;
+    }
+
+    function isValidOrganization(data) {
+      return data.keys().hasAll(['name', 'ownerId', 'createdAt']) &&
+             data.keys().size() <= 10 &&
+             data.name is string && data.name.size() <= 200 &&
+             data.ownerId == request.auth.uid &&
+             data.createdAt == request.time;
+    }
+
+    function isValidNeed(data) {
+      return data.keys().hasAll(['title', 'urgencyLevel', 'category', 'status', 'reportedBy', 'createdAt']) &&
+             data.keys().size() <= 15 &&
+             data.title is string && data.title.size() <= 200 &&
+             data.urgencyLevel in ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] &&
+             data.category in ['HEALTH', 'EDUCATION', 'FOOD', 'SHELTER', 'ENVIRONMENT', 'OTHER'] &&
+             data.status in ['OPEN', 'IN_PROGRESS', 'RESOLVED'] &&
+             data.reportedBy == request.auth.uid &&
+             data.createdAt == request.time;
+    }
+
+    // --- COLLECTION MATCHES ---
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId);
+      allow list: if isAdmin();
+      allow create: if isSignedIn() && isValidUser(incoming()) && userId == request.auth.uid;
+      allow update: if isSignedIn() && userId == request.auth.uid && (
+        (incoming().diff(existing()).affectedKeys().hasOnly(['name', 'image', 'updatedAt']) && incoming().updatedAt == request.time) ||
+        isAdmin()
+      );
+    }
+
+    match /organizations/{orgId} {
+      allow get: if isValidId(orgId);
+      allow list: if true; // Public directory
+      allow create: if isVerified() && isNgoManager() && isValidOrganization(incoming());
+      allow update: if isVerified() && existing().ownerId == request.auth.uid && (
+        (incoming().diff(existing()).affectedKeys().hasOnly(['name', 'description', 'location', 'contactEmail']) && isValidOrganization(incoming())) ||
+        isAdmin()
+      );
+    }
+
+    match /needs/{needId} {
+      allow get: if isValidId(needId);
+      allow list: if true; // Public map
+      allow create: if isVerified() && isNgoManager() && isValidNeed(incoming());
+      allow update: if isVerified() && (
+        (existing().reportedBy == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'urgencyLevel', 'category', 'status', 'updatedAt']) && incoming().updatedAt == request.time) ||
+        isAdmin()
+      );
+    }
+
+    match /reports/{reportId} {
+      allow get: if isVerified() && isNgoManager() && isValidId(reportId);
+      allow list: if isVerified() && isNgoManager();
+      allow create: if isVerified() && isNgoManager();
+    }
+
+    match /volunteer_profiles/{profileId} {
+      allow get: if isSignedIn() && isValidId(profileId);
+      allow list: if isSignedIn();
+      allow create: if isVerified() && incoming().userId == request.auth.uid;
+      allow update: if isVerified() && existing().userId == request.auth.uid;
+    }
+
+    match /matches/{matchId} {
+      allow get: if isVerified() && (resource.data.volunteerId == request.auth.uid || isNgoManager()) && isValidId(matchId);
+      allow list: if isVerified() && (resource.data.volunteerId == request.auth.uid || isNgoManager());
+      allow create: if isVerified() && isNgoManager();
+      allow update: if isVerified() && (
+        (resource.data.volunteerId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['status'])) ||
+        (isNgoManager() && existing().reportedBy == request.auth.uid) ||
+        isAdmin()
+      );
+    }
+    
+    match /tasks/{taskId} {
+      allow get: if isSignedIn() && isValidId(taskId);
+      allow list: if isSignedIn();
+      allow create: if isVerified() && (isNgoManager() || isAdmin());
+      allow update: if isVerified() && (
+        (resource.data.assignedTo == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['status'])) ||
+        isNgoManager() ||
+        isAdmin()
+      );
+    }
+
+    match /notifications/{notifId} {
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid && isValidId(notifId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if false; // System only
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['read']);
+    }
+  }
+}

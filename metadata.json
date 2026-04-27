@@ -1,0 +1,13 @@
+{
+  "name": "ResourceMap",
+  "description": "Smart Resource Allocation platform for Data-Driven Volunteer Coordination for Social Impact.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "AI-powered Matching",
+    "Real-time Notifications",
+    "Interactive Resource Maps",
+    "Survey Data Processing"
+  ]
+}
