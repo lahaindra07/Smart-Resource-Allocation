@@ -2,26 +2,21 @@ import { useState } from "react";
 import { 
   Users, 
   ShieldCheck, 
-  Building2, 
-  AlertCircle,
-  BarChart3,
-  Search,
-  Check,
-  X,
-  UserCog
+  Search, 
+  Check, 
+  X, 
+  UserCog,
+  Shield,
+  Activity
 } from "lucide-react";
 import { 
-  BarChart, 
-  Bar, 
   XAxis, 
-  YAxis, 
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
   AreaChart,
   Area
 } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -33,7 +28,7 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { toast } from "sonner";
 
 const PLATFORM_DATA = [
   { day: 'Mon', active: 120 },
@@ -45,90 +40,195 @@ const PLATFORM_DATA = [
   { day: 'Sun', active: 280 },
 ];
 
+const INITIAL_USERS = [
+  { id: "u1", name: "Alex Rivera", email: "alex@relief.ngo", role: "NGO_MANAGER", active: true },
+  { id: "u2", name: "Jordan Smith", email: "jsmith@gmail.com", role: "VOLUNTEER", active: true },
+  { id: "u3", name: "Taylor Reed", email: "treed@resourcemap.org", role: "ADMIN", active: true },
+  { id: "u4", name: "Casey Moore", email: "cmoore@other.com", role: "PUBLIC", active: false },
+  { id: "u5", name: "Dr. Aris Thorne", email: "athorne@healthcorps.org", role: "NGO_MANAGER", active: true },
+];
+
+const INITIAL_VERIFICATIONS = [
+  { id: "v1", name: "SEEDS India Disaster Response", docs: "NGO Darpan ID, FCRA, NDMA Liaison" },
+  { id: "v2", name: "Goonj Humanitarian Aid Network", docs: "Darpan Portal Registration, 80G Certificate" },
+  { id: "v3", name: "Akshaya Patra Relief Logistics", docs: "FSSAI Relief License, State Disaster MoU" },
+  { id: "v4", name: "Ramakrishna Mission Relief Wing", docs: "Charitable Societies Registration, West Bengal" },
+];
+
 export function AdminDashboard() {
+  const [users, setUsers] = useState(INITIAL_USERS);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [verifications, setVerifications] = useState(INITIAL_VERIFICATIONS);
+
+  const filteredUsers = users.filter(u => 
+    u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.role.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const toggleUserAccess = (id: string, name: string) => {
+    setUsers(prev => prev.map(u => {
+      if (u.id === id) {
+        const nextState = !u.active;
+        toast.info(`Access for ${name} set to ${nextState ? "AUTHORIZED" : "LOCKED"}`);
+        return { ...u, active: nextState };
+      }
+      return u;
+    }));
+  };
+
+  const handleApprove = (id: string, name: string) => {
+    setVerifications(prev => prev.filter(v => v.id !== id));
+    toast.success(`Organization "${name}" verified and approved for network dispatch!`);
+  };
+
+  const handleReject = (id: string, name: string) => {
+    setVerifications(prev => prev.filter(v => v.id !== id));
+    toast.error(`Verification rejected for "${name}". Notification dispatched.`);
+  };
+
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-8 bg-[#0F172A] min-h-screen text-slate-200">
+    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 bg-slate-50 min-h-[calc(100vh-64px)] text-slate-800">
       {/* Header */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-2 border-b border-slate-200">
         <div>
-          <h1 className="text-3xl font-bold font-display tracking-tight text-white">Platform <span className="text-[#14B8A6]">Control Center</span></h1>
-          <p className="text-slate-400 font-medium font-sans">Global overview of ResourceMap network and security.</p>
+          <h1 className="text-2xl md:text-3xl font-bold font-display text-slate-900 tracking-tight">
+            Network <span className="text-teal-600">Control Center</span>
+          </h1>
+          <p className="text-sm text-slate-500 font-medium">
+            Global governance, compliance audits, and security telemetry.
+          </p>
         </div>
         <div className="flex items-center gap-4">
-           <div className="flex items-center gap-2 bg-slate-800/50 px-4 py-2 rounded-full border border-slate-700/50">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-            <span className="text-xs font-medium uppercase tracking-wider text-slate-400 font-mono">System Nominal</span>
+          <div className="flex items-center gap-2 bg-white px-3.5 py-1.5 rounded-full border border-slate-200 shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-xs font-semibold text-slate-700 font-mono">
+              All Systems Operational
+            </span>
           </div>
         </div>
       </header>
 
       {/* Global Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bento-panel p-6 bg-[#14B8A6] text-slate-900 border-none shadow-xl shadow-teal-900/30">
-           <div className="flex justify-between items-start mb-4">
-             <span className="text-[10px] uppercase font-black tracking-widest opacity-80">Total Users Registered</span>
-             <Users className="h-5 w-5 opacity-50" />
-           </div>
-           <p className="text-5xl font-black font-display tracking-tighter">15,248</p>
-           <div className="mt-4 pt-4 border-t border-slate-900/10 flex items-center gap-2">
-              <div className="px-2 py-0.5 bg-white/30 rounded text-[9px] font-black uppercase">Realtime</div>
-              <span className="text-[9px] font-bold">+124 since midnight</span>
-           </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+          <div>
+            <span className="text-xs uppercase font-bold tracking-wider text-slate-500">
+              Registered Identities
+            </span>
+            <p className="text-3xl md:text-4xl font-extrabold text-slate-900 font-display mt-2">15,248</p>
+            <div className="mt-2 flex items-center gap-2">
+              <span className="px-2 py-0.5 bg-teal-50 text-teal-700 border border-teal-200/60 rounded text-[10px] font-bold">Live</span>
+              <span className="text-xs text-slate-500">+124 since midnight</span>
+            </div>
+          </div>
+          <div className="p-3 bg-teal-50 text-teal-600 rounded-2xl">
+            <Users className="h-6 w-6" />
+          </div>
         </div>
 
-        <div className="bento-panel flex flex-col justify-between p-6 bg-slate-900 border-slate-700/80">
-           <div>
-             <span className="text-[10px] uppercase font-bold tracking-widest text-[#14B8A6] block mb-4">Verified Organizations</span>
-             <p className="text-5xl font-black font-display tracking-tighter text-white">482</p>
-           </div>
-           <div className="mt-6">
-              <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                <div className="h-full bg-[#14B8A6] w-[88%] glow-teal"></div>
-              </div>
-              <span className="text-[9px] font-bold text-slate-500 uppercase mt-2 block tracking-widest">88% Network Compliance</span>
-           </div>
+        <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+          <div>
+            <span className="text-xs uppercase font-bold tracking-wider text-teal-700">
+              Verified Organizations
+            </span>
+            <p className="text-3xl md:text-4xl font-extrabold text-slate-900 font-display mt-2">482</p>
+            <div className="mt-2 text-xs font-medium text-slate-500">
+              88% Network Compliance Rate
+            </div>
+          </div>
+          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
+            <ShieldCheck className="h-6 w-6" />
+          </div>
         </div>
 
-        <div className="bento-panel flex flex-col justify-between p-6 bg-slate-900 border-slate-700/80">
-           <div>
-             <span className="text-[10px] uppercase font-bold tracking-widest text-amber-500 block mb-4">Pending Verifications</span>
-             <p className="text-5xl font-black font-display tracking-tighter text-white">12</p>
-           </div>
-           <button className="w-full mt-6 py-2 bg-amber-500/10 border border-amber-500/20 text-amber-500 font-black text-[10px] rounded-xl hover:bg-amber-500/20 transition-all uppercase tracking-widest">
-             Review Pending Queue →
-           </button>
+        <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+          <div>
+            <span className="text-xs uppercase font-bold tracking-wider text-amber-700">
+              Pending Audit Queue
+            </span>
+            <p className="text-3xl md:text-4xl font-extrabold text-slate-900 font-display mt-2">
+              {verifications.length}
+            </p>
+            <div className="mt-2 text-xs font-medium text-slate-500">
+              {verifications.length > 0 ? "Requires review" : "Queue cleared"}
+            </div>
+          </div>
+          <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl">
+            <Shield className="h-6 w-6" />
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-4">
+      <div className="grid grid-cols-12 gap-6">
         {/* User Management Panel */}
         <div className="col-span-12 lg:col-span-7">
-          <div className="bento-panel p-6 h-full">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 h-full space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
-                <h3 className="text-lg font-bold font-display">User Directory</h3>
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Reviewing 15,248 identities</p>
+                <h3 className="text-base font-bold text-slate-900 font-display">User Directory</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Filter by identity, email, or security tier</p>
               </div>
-              <div className="relative w-full md:w-64 group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500 group-hover:text-[#14B8A6] transition-colors" />
-                <Input placeholder="Search global directory..." className="bg-slate-900 border-slate-700 h-10 pl-10 text-xs focus:border-[#14B8A6] transition-all rounded-xl" />
+              <div className="relative w-full sm:w-56">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                <Input 
+                  placeholder="Filter users..." 
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  className="bg-slate-50 border-slate-200 h-9 pl-9 text-xs rounded-xl text-slate-900" 
+                />
               </div>
             </div>
-            <div className="overflow-hidden border border-slate-700/50 rounded-2xl">
+
+            <div className="overflow-hidden border border-slate-200 rounded-xl">
               <Table>
-                <TableHeader className="bg-slate-800/40">
-                  <TableRow className="border-slate-700/50 hover:bg-transparent">
-                    <TableHead className="text-slate-400 font-bold text-[10px] uppercase tracking-widest py-4">Identity</TableHead>
-                    <TableHead className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Defined Role</TableHead>
-                    <TableHead className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Access State</TableHead>
-                    <TableHead />
+                <TableHeader className="bg-slate-50">
+                  <TableRow className="border-slate-200 hover:bg-transparent">
+                    <TableHead className="text-slate-600 font-bold text-xs py-3">Identity</TableHead>
+                    <TableHead className="text-slate-600 font-bold text-xs">Role</TableHead>
+                    <TableHead className="text-slate-600 font-bold text-xs">State</TableHead>
+                    <TableHead className="text-right text-slate-600 font-bold text-xs">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <UserRow name="Alex Rivera" email="alex@ngo.org" role="NGO_MANAGER" active={true} />
-                  <UserRow name="Jordan Smith" email="jsmith@gmail.com" role="VOLUNTEER" active={true} />
-                  <UserRow name="Taylor Reed" email="treed@resourcemap.com" role="ADMIN" active={true} />
-                  <UserRow name="Casey Moore" email="cmoore@other.com" role="PUBLIC" active={false} />
+                  {filteredUsers.map((user) => (
+                    <TableRow key={user.id} className="border-slate-100 hover:bg-slate-50/70 transition-all">
+                      <TableCell className="py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-700 text-xs">
+                            {user.name.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-slate-900">{user.name}</p>
+                            <p className="text-[11px] text-slate-500">{user.email}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-[10px] font-semibold bg-slate-50 border-slate-200 text-slate-700">
+                          {user.role}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${user.active ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                          <span className={`text-xs font-bold ${user.active ? 'text-emerald-700' : 'text-rose-700'}`}>
+                            {user.active ? 'ACTIVE' : 'LOCKED'}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => toggleUserAccess(user.id, user.name)}
+                          className="h-8 text-xs text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+                        >
+                          <UserCog className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </div>
@@ -136,96 +236,75 @@ export function AdminDashboard() {
         </div>
 
         {/* Technical Insights Section */}
-        <div className="col-span-12 lg:col-span-5 space-y-4">
-          <div className="bento-panel p-6 bg-slate-900 border-slate-700/80">
-            <h3 className="text-sm font-bold uppercase tracking-widest text-[#14B8A6] mb-6">Traffic Analysis</h3>
-            <div className="h-60">
+        <div className="col-span-12 lg:col-span-5 space-y-6">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 font-display">
+                Traffic & Dispatch Telemetry
+              </h3>
+              <Activity className="h-4 w-4 text-teal-600" />
+            </div>
+            <div className="h-52">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={PLATFORM_DATA}>
                   <defs>
-                    <linearGradient id="colorActive" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#14B8A6" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#14B8A6" stopOpacity={0}/>
+                    <linearGradient id="colorActiveLight" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#0D9488" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#0D9488" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1E293B" />
-                  <XAxis dataKey="day" stroke="#475569" fontSize={10} tickLine={false} axisLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                  <XAxis dataKey="day" stroke="#94A3B8" fontSize={11} tickLine={false} axisLine={false} />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#0F172A', border: '1px solid #334155', color: '#fff', borderRadius: '12px' }}
+                    contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', color: '#0F172A', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
                   />
-                  <Area type="monotone" dataKey="active" stroke="#14B8A6" fillOpacity={1} fill="url(#colorActive)" strokeWidth={3} />
+                  <Area type="monotone" dataKey="active" stroke="#0D9488" fillOpacity={1} fill="url(#colorActiveLight)" strokeWidth={2.5} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="bento-panel p-6 border-slate-700/50">
-             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-6 flex items-center justify-between">
-               Verification Pipeline
-               <span className="text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">! Urgent</span>
-             </h4>
-             <div className="space-y-3">
-               <VerificationItem name="GreenHands Brazil" docs="Tax-ID, Registration" />
-               <VerificationItem name="EduAfrica" docs="MOU, NGO-Cert" />
-             </div>
-             <button className="w-full mt-6 text-[10px] font-bold text-slate-500 hover:text-white transition-colors uppercase tracking-widest">
-               Access Full Verification Portal →
-             </button>
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 font-display flex items-center justify-between">
+              NGO Verification Pipeline
+              <span className="text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full text-[10px]">
+                {verifications.length} Pending Audit
+              </span>
+            </h4>
+            <div className="space-y-3">
+              {verifications.length === 0 ? (
+                <p className="text-xs text-slate-500 py-4 text-center">No pending organization verifications.</p>
+              ) : (
+                verifications.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                    <div>
+                      <p className="text-xs font-bold text-slate-900">{item.name}</p>
+                      <p className="text-[11px] text-slate-500 mt-0.5">{item.docs}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        size="icon" 
+                        variant="outline" 
+                        onClick={() => handleApprove(item.id, item.name)}
+                        className="h-7 w-7 rounded-lg bg-white border-emerald-300 text-emerald-600 hover:bg-emerald-50 shadow-xs"
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button 
+                        size="icon" 
+                        variant="outline" 
+                        onClick={() => handleReject(item.id, item.name)}
+                        className="h-7 w-7 rounded-lg bg-white border-rose-300 text-rose-600 hover:bg-rose-50 shadow-xs"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function UserRow({ name, email, role, active }: any) {
-  return (
-    <TableRow className="border-slate-700/50 hover:bg-slate-800/20 transition-all group">
-      <TableCell className="py-4">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center font-black text-slate-500 group-hover:border-[#14B8A6]/50 transition-all">
-            {name.charAt(0)}
-          </div>
-          <div>
-            <p className="text-xs font-bold text-slate-200 group-hover:text-white transition-colors">{name}</p>
-            <p className="text-[9px] text-slate-500 font-mono">{email}</p>
-          </div>
-        </div>
-      </TableCell>
-      <TableCell>
-        <Badge variant="outline" className="text-[8px] font-black bg-slate-900 border-slate-700 text-slate-400 uppercase tracking-widest">{role}</Badge>
-      </TableCell>
-      <TableCell>
-        <div className="flex items-center gap-2">
-          <div className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-[#14B8A6] glow-teal' : 'bg-slate-700'}`} />
-          <span className={`text-[10px] font-black uppercase tracking-tighter ${active ? 'text-slate-200' : 'text-slate-600'}`}>
-            {active ? 'AUTHORIZED' : 'LOCKED'}
-          </span>
-        </div>
-      </TableCell>
-      <TableCell className="text-right">
-        <button className="p-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-500 hover:text-[#14B8A6] hover:border-[#14B8A6]/50 transition-all">
-          <UserCog className="h-4 w-4" />
-        </button>
-      </TableCell>
-    </TableRow>
-  );
-}
-
-function VerificationItem({ name, docs }: any) {
-  return (
-    <div className="flex items-center justify-between p-4 rounded-2xl bg-black/20 border border-slate-800/50 hover:border-slate-700 transition-colors group">
-      <div>
-        <p className="text-xs font-bold text-slate-200 group-hover:text-white transition-colors">{name}</p>
-        <p className="text-[9px] text-slate-500 font-medium font-sans mt-0.5 italic">{docs}</p>
-      </div>
-      <div className="flex gap-2">
-        <Button size="icon" variant="outline" className="h-8 w-8 rounded-xl bg-slate-900 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 transition-all">
-          <Check className="h-3.5 w-3.5" />
-        </Button>
-        <Button size="icon" variant="outline" className="h-8 w-8 rounded-xl bg-slate-900 border-rose-500/20 text-rose-400 hover:bg-rose-500/10 transition-all">
-          <X className="h-3.5 w-3.5" />
-        </Button>
       </div>
     </div>
   );

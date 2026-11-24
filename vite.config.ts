@@ -8,7 +8,11 @@ export default defineConfig(({mode}) => {
   return {
     plugins: [react(), tailwindcss()],
     define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || ''),
+      'process.env.NVIDIA_NEMOTRON': JSON.stringify(env.NVIDIA_NEMOTRON || ''),
+      'process.env.OPENROUTER_API_KEY': JSON.stringify(env.OPENROUTER_API_KEY || env.NVIDIA_NEMOTRON || ''),
+      'process.env.NEMOTRON_MODEL': JSON.stringify(env.NEMOTRON_MODEL || 'nvidia/nemotron-3-ultra-550b-a55b:free'),
+      'process.env': JSON.stringify({}),
     },
     resolve: {
       alias: {

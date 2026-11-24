@@ -1,11 +1,12 @@
 {
-  "name": "react-example",
+  "name": "smart-resource-allocation-india",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "frontend": "vite",
-    "backend": "tsx server.ts",
+    "backend": "tsx server/index.ts",
+    "server": "tsx server/index.ts",
     "dev": "concurrently \"npm run frontend\" \"npm run backend\"",
     "build": "vite build",
     "preview": "vite preview"
